@@ -8,7 +8,7 @@ const client = new MongoClient(uri);
 const express = require('express');
 const app = express(); 
 const hostname = '127.0.0.1';
-const port = 5001;
+const port = process.env.PORT || 3001;
 
 // setup db connection & add initial data if empty
 try {
@@ -61,22 +61,20 @@ function startREPL() {
   });
 }
 
-/*
-app.get("/reviewApplication", (req, res) => {
-    res.render('../templates/reviewApplication.ejs', null);
+app.get("/", (req, res) => {
+    res.render('../templates/index.ejs', null);
 });
-*/
 
-app.get("/test", async (req, res) => {
-    const database = client.db(process.env.MONGO_DB_NAME);
-    const collection = database.collection(`${process.env.MONGO_COLLECTION}`);
-    await collection.insertOne({test1: 1, test2: 2});
+// app.post("/processAdminRemove", async (req, res) => {
+//     const database = client.db(process.env.MONGO_DB_NAME);
+//     const collection = database.collection(`${process.env.MONGO_COLLECTION}`);
+//     applicants = (await collection.find({}).toArray()).length;
+//     const result = await collection.deleteMany({});
 
-    
-    res.send("amogus");
-    //res.render('../templates/processReviewApplication.ejs', {'name': obj.name, 'email': obj.email, 'gpa': obj.gpa.toString(), 'info': obj.info, 'time': time});
+//     res.render('../templates/processAdminRemove.ejs', {'num': applicants});
 
-});
+// });
+
 
 
 
