@@ -1,64 +1,82 @@
-const path = require("path");
-const express = require("express");
-const fs = require("fs");
-const bodyParser = require("body-parser");
-const readline = require("readline").createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
-
-const app = express();
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
+const { MongoClient } = require('mongodb');
 const uri = `mongodb+srv://${process.env.MONGO_DB_USERNAME}:${process.env.MONGO_DB_PASSWORD}@cluster0.sfnlykc.mongodb.net/?retryWrites=true&w=majority`;
+const client = new MongoClient(uri);
+const express = require('express');
+const app = express(); 
+const hostname = '127.0.0.1';
+const port = 5001;
 
-app.use(express.static(__dirname + '/css'));
-app.use(express.static(__dirname + '/js'));
-app.set("views", path.resolve(__dirname, "templates"));
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({ extended: false }));
-
-async function main() {
-    const client = new MongoClient(uri, {
-        serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
-        },
-    });
-    try {
-        await client.connect();
-        if (process.argv.length != 3) {
-            console.log("Usage summerCampServer.js portNumber");
-            process.exit();
-        } else {
-            app.listen(Number(process.argv[2]), (err) => {
-                if (err) {
-                    console.log("Starting server failed.");
-                } else {
-                    console.log(
-                        `Web server started and running at http://localhost:${Number(process.argv[2])}`);
-                    process.stdout.write("Stop to shut down the server: ");
-                    readline.on("line", (input) => {
-                        if (input === "stop") {
-                            console.log("Shutting down the server");
-                            process.exit(0);
-                        } else {
-                            console.log(`Invalid command: ${input}`);
-                        }
-                        process.stdout.write("Stop to shut down the server: ");
-                    });
-                }
-            });
-
-            app.get("/", async (request, response) => {
-                await client.db(process.env.MONGO_DB_NAME).collection(process.env.MONGO_COLLECTION).insertOne({test1: 1, test2: 2});
-                response.send("Hello World");
-            });
-        }
-    } catch (e) {
-        console.error(e);
-    }
+// setup db connection & add initial data if empty
+try {
+    client.connect();
+} catch (err) {
+    console.error('Error connecting to MongoDB:', err);
+    process.exit(0);
 }
 
-main().catch(console.error);
+// create readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+
+app.use(express.urlencoded({ extended: true }));
+
+app.listen(port, (err) => {
+  if (err) {
+    console.log("Starting server failed.");
+  } else {
+    console.log(`To access server: http://localhost:${port}`);
+    startREPL();
+  }
+}); 
+console.log("============================");
+
+function startREPL() {
+  rl.setPrompt('Stop to shutdown the server:');
+  rl.prompt();
+
+  // listener for command line interface
+  rl.on('line', (input) => {
+      
+      if(input === "stop"){
+        console.log('Shutting down the server');
+        process.exit(0);
+      }
+      else {
+        // prompt user again
+        rl.prompt();
+      }
+  });
+
+  // listener for closing command line interface
+  rl.on('close', () => {
+    console.log('Shutting down the server');
+    process.exit(0);
+  });
+}
+
+/*
+app.get("/reviewApplication", (req, res) => {
+    res.render('../templates/reviewApplication.ejs', null);
+});
+*/
+
+app.get("/test", async (req, res) => {
+    const database = client.db(process.env.MONGO_DB_NAME);
+    const collection = database.collection(`${process.env.MONGO_COLLECTION}`);
+    await collection.insertOne({test1: 1, test2: 2});
+
+    
+    res.send("amogus");
+    //res.render('../templates/processReviewApplication.ejs', {'name': obj.name, 'email': obj.email, 'gpa': obj.gpa.toString(), 'info': obj.info, 'time': time});
+
+});
+
+
+
